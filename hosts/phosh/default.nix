@@ -1,4 +1,4 @@
-{pkgs, ...}: {
+{pkgs, lib, ...}: {
   # Minimal Phosh (no browser): auto-login shell + on-screen keyboard + terminal.
   imports = [
     ../../modules/bootmac
@@ -64,7 +64,7 @@
           idle-activation-enabled = false;
         };
         "org/gnome/desktop/session" = {
-          idle-delay = 0;
+          idle-delay = lib.gvariant.mkUint32 0;
         };
       };
     }
