@@ -22,15 +22,13 @@
   # Enable experimental Nix features (flakes).
   nix.settings.experimental-features = ["nix-command" "flakes"];
 
-  # Create admin user with default password for testing.
+  # Create admin user (password set via `mkpasswd`, change with `passwd`).
   users = {
     mutableUsers = true;
 
     users.admin = {
       isNormalUser = true;
-      # Default password: "admin" (insecure, for testing only).
-      # Users should change this with `passwd` after first login.
-      initialPassword = "admin";
+      hashedPassword = "$6$/q9DFs1FWNfkPVQS$/TfiEwaAWStUhdKQOam8bT31zx5behxknqHgm9C994fqjD8tXNsaj5f/LXomAz7wPvXOOvlCmOwMKe5XRzOAU0";
       # Add to wheel group for sudo access.
       extraGroups = ["wheel"];
     };
