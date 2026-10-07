@@ -7,10 +7,10 @@ on:
         description: 'Build target'
         required: true
         default: 'gnome-mobile'
-        type: choice
         options:
           - gnome-mobile
           - minimal
+          - phosh
 
 jobs:
   build:

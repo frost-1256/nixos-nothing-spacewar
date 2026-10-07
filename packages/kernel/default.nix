@@ -7,12 +7,14 @@
   stdenv,
   ...
 }: let
-  # Kernel source from `sc7280-mainline` repository.
+  # Kernel source: fork of `sc7280-mainline/linux` carrying the spacewar
+  # sound-channel fix (both TFA9873 amps defaulted to TDM slot 0 = left
+  # channel only). Revert to upstream once fixed there.
   kernelSrc = fetchFromGitHub {
-    owner = "sc7280-mainline";
+    owner = "frost-1256";
     repo = "linux";
-    rev = "v6.17.0-sc7280";
-    hash = "sha256-k6Fp5Dhy1s7Jnpc1qywHZxmkH2+OAYk1Yy8vSBSyR5k=";
+    rev = "906c313aedbfc229661e5bfe234aba595b7a94af";
+    hash = "sha256-u8Jo1t8RXbn/srkSYchy5shefXMZ9egYYhQlcDyWqYg=";
   };
 
   # Source of postmarketOS `pmaports` repository.
@@ -43,6 +45,13 @@
   # DisplayPort output over USB-C:
   # - CONFIG_TYPEC_DP_ALTMODE: Required for DP Alt Mode over USB-C to work.
   # - CONFIG_TYPEC_UCSI: Unchanged, as upstream already uses `=y`.
+
+  # Chassis microphones (WCD9385 via SoundWire):
+  # - CONFIG_SND_SOC_WCD938X_SDW: WCD938x SoundWire codec driver.
+  # - CONFIG_SND_SOC_LPASS_TX_MACRO/_VA_MACRO/_RX_MACRO: LPASS macros for
+  #   TX capture, VA DMIC, and RX (headphone) paths.
+  # - CONFIG_SOUNDWIRE_QCOM: Qualcomm SoundWire controller.
+
   configfile = stdenv.mkDerivation {
     name = "kernel-config";
     src = "${pmaportsSrc}/device/testing/linux-postmarketos-qcom-sc7280/config-postmarketos-qcom-sc7280.aarch64";
@@ -61,6 +70,11 @@
         -e 's/# CONFIG_NETFILTER_XT_MATCH_STATE is not set/CONFIG_NETFILTER_XT_MATCH_STATE=m/' \
         -e 's/# CONFIG_NETFILTER_XT_TARGET_LOG is not set/CONFIG_NETFILTER_XT_TARGET_LOG=m/' \
         -e 's/# CONFIG_TYPEC_DP_ALTMODE is not set/CONFIG_TYPEC_DP_ALTMODE=y/' \
+        -e 's/# CONFIG_SND_SOC_WCD938X_SDW is not set/CONFIG_SND_SOC_WCD938X_SDW=m/' \
+        -e 's/# CONFIG_SND_SOC_LPASS_TX_MACRO is not set/CONFIG_SND_SOC_LPASS_TX_MACRO=m/' \
+        -e 's/# CONFIG_SND_SOC_LPASS_VA_MACRO is not set/CONFIG_SND_SOC_LPASS_VA_MACRO=m/' \
+        -e 's/# CONFIG_SND_SOC_LPASS_RX_MACRO is not set/CONFIG_SND_SOC_LPASS_RX_MACRO=m/' \
+        -e 's/# CONFIG_SOUNDWIRE_QCOM is not set/CONFIG_SOUNDWIRE_QCOM=m/' \
         $src > config
     '';
 

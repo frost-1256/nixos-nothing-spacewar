@@ -164,6 +164,12 @@
           modules = [./hosts/gnome-mobile];
           pkgs = exampleConfigPkgs;
         };
+        phosh = nixpkgs.lib.nixosSystem {
+          inherit system;
+
+          modules = [./hosts/phosh];
+          pkgs = exampleConfigPkgs;
+        };
         minimal = nixpkgs.lib.nixosSystem {
           inherit system;
 
