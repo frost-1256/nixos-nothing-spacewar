@@ -32,4 +32,10 @@ final: prev: {
   xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (old: {
     doCheck = false;
   });
+
+  # test-keypad needs a display (:99) and SIGTRAPs under QEMU aarch64
+  # emulation (see build.yaml). Same treatment as xdg-desktop-portal above.
+  libhandy = prev.libhandy.overrideAttrs (old: {
+    doCheck = false;
+  });
 }
