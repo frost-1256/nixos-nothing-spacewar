@@ -50,6 +50,26 @@
     group = "users";
   };
 
+  # SSH fallback (no keyboard on device yet).
+  services.openssh.enable = true;
+
+  # Phosh starts locked; without a working OSK the lockscreen is a dead end.
+  # Disable screen lock so the session is usable without typing a password.
+  programs.dconf.enable = true;
+  programs.dconf.profiles.user.databases = [
+    {
+      settings = {
+        "org/gnome/desktop/screensaver" = {
+          lock-enabled = false;
+          idle-activation-enabled = false;
+        };
+        "org/gnome/desktop/session" = {
+          idle-delay = 0;
+        };
+      };
+    }
+  ];
+
   # Terminal for on-device debugging.
   environment.systemPackages = with pkgs; [
     gnome-console
