@@ -25,12 +25,8 @@
     wl-clipboard # Wayland clipboard util, also used for Waydroid clipboard sharing.
 
     # Apps.
-    dialect # Translation app.
-    firefox-mobile
     gnome-decoder # QR code scanner & generator.
-    gnome-software
     resources # System resource monitor.
-    warp # Magic wormhole file transfer.
 
     # GNOME extensions.
     gnomeExtensions.app-hider # Hide desktop icons.
@@ -56,8 +52,8 @@
     };
   };
 
-  # Enable Waydroid.
-  virtualisation.waydroid.enable = true;
+  # Waydroid disabled: heavy + needs binder, not needed for bring-up.
+  # virtualisation.waydroid.enable = true;
 
   # Create admin user with default password for testing.
   users = {
