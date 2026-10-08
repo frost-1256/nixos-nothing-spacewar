@@ -25,7 +25,7 @@
     wl-clipboard # Wayland clipboard util, also used for Waydroid clipboard sharing.
 
     # Apps.
-    gnome-decoder # QR code scanner & generator.
+    firefox-bin # Prebuilt binary (firefox-mobile needs source build).
     resources # System resource monitor.
 
     # GNOME extensions.
