@@ -1,0 +1,132 @@
+diff -r orig-tree/squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/layout.rs squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/layout.rs
+--- orig-tree/squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/layout.rs	2024-11-25 07:23:24.000000000 +0900
++++ squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/layout.rs	2026-10-08 15:41:38.263888129 +0900
+@@ -1158,7 +1158,7 @@
+     fn handle_release_key_cleaner(
+         shape: &LayoutData,
+         submission: &mut Submission,
+-        ui: Option<&UIBackend>,
++        _ui: Option<&UIBackend>,
+         time: Timestamp,
+         // TODO: intermediate measure:
+         // passing state conditionally because it's only used for popover.
+@@ -1189,26 +1189,10 @@
+                     false => submission.handle_drop_modifier(key_id, modifier, time),
+                 }
+             }
+-            // only show when UI is present
+-            Action::ShowPreferences => if let Some(ui) = &ui {
+-                // only show when layout manager is available
++            // Cycle input sources instead of opening the chooser popover.
++            Action::ShowPreferences => {
+                 if let Some((manager, app_state)) = manager {
+-                    let place = shape.find_button_place(button_pos);
+-
+-                    if let Some((position, button)) = place {
+-                        let bounds = c::Bounds {
+-                            x: position.x,
+-                            y: position.y,
+-                            width: button.size.width,
+-                            height: button.size.height,
+-                        };
+-                        popover::show(
+-                            ui.keyboard,
+-                            ui.widget_to_layout.reverse_bounds(bounds),
+-                            manager,
+-                            app_state,
+-                        );
+-                    }
++                    popover::cycle_layout(manager, app_state);
+                 }
+             },
+             // Other keys are handled in view switcher before.
+diff -r orig-tree/squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/popover.rs squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/popover.rs
+--- orig-tree/squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/popover.rs	2024-11-25 07:23:24.000000000 +0900
++++ squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e/src/popover.rs	2026-10-08 15:41:38.266445420 +0900
+@@ -167,6 +167,7 @@
+     }
+ }
+ 
++#[allow(dead_code)]
+ fn set_visible_layout(
+     layout_id: &LayoutId,
+ ) {
+@@ -178,7 +179,77 @@
+     }
+ }
+ 
++/// Map a squeekboard/xkb layout name to the fcitx5 input method name.
++/// Returns None for layouts with no fcitx5 counterpart (fcitx5 untouched).
++fn fcitx5_im_for_layout(name: &str) -> Option<&'static str> {
++    match name {
++        // US English: plain keyboard, no conversion.
++        n if n.starts_with("us") => Some("keyboard-us"),
++        // Japanese: mozc (romaji conversion). Squeekboard shows the jp
++        // kana layout while fcitx5/mozc converts romaji input.
++        n if n.starts_with("jp") => Some("mozc"),
++        _ => None,
++    }
++}
++
++/// Ask fcitx5 to switch input method via
++/// `org.fcitx.Fcitx5 /controller org.fcitx.Fcitx.Controller1.SetCurrentIM`.
++/// Best-effort: silently ignored when fcitx5 is not running.
++fn set_fcitx5_im(im: &str) {
++    use gio::prelude::DBusProxyExt;
++    let proxy = gio::DBusProxy::for_bus_sync(
++        gio::BusType::Session,
++        gio::DBusProxyFlags::NONE,
++        None,
++        "org.fcitx.Fcitx5",
++        "/controller",
++        "org.fcitx.Fcitx.Controller1",
++        gio::Cancellable::NONE,
++    );
++    if let Ok(proxy) = proxy {
++        let params = (im.to_variant(),).to_variant();
++        let _ = proxy.call_sync(
++            "SetCurrentIM",
++            Some(&params),
++            gio::DBusCallFlags::NONE,
++            -1,
++            gio::Cancellable::NONE,
++        );
++    }
++}
++
++pub fn cycle_layout(
++    popover: &actors::popover::State,
++    app_state: receiver::State,
++) {
++    let _ = popover;
++    let settings = get_settings("org.gnome.desktop.input-sources");
++    if let Some(settings) = settings {
++        let inputs = variants::get_tuples(settings.value("sources"));
++        if inputs.len() < 2 {
++            return;
++        }
++        let mut rotated = inputs.clone();
++        rotated.rotate_left(1);
++        let _ = settings.set_value(
++            "sources",
++            &variants::ArrayPairString(rotated.clone()).to_variant(),
++        );
++        settings.apply();
++        let (kind, name) = rotated.into_iter().next().unwrap();
++        if let Some(im) = fcitx5_im_for_layout(&name) {
++            set_fcitx5_im(im);
++        }
++        let layout = LayoutId::System {
++            kind,
++            name,
++        };
++        let _ = app_state.send(state::Event::OverlayChanged(layout));
++    }
++}
++
+ /// Takes into account first any overlays, then system layouts from the list
++#[allow(dead_code)]
+ fn get_current_layout(
+     popover: &actors::popover::State,
+     system_layouts: &Vec<LayoutId>,
+Only in squeekboard-v1.43.1-15569da021824b6da5c337ba9875c5002158f43e: target

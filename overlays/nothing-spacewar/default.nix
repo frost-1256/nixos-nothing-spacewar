@@ -29,6 +29,12 @@ final: prev: {
   # Configure MAC addresses at boot for WiFi and Bluetooth.
   bootmac = final.callPackage ../../packages/bootmac {};
 
+  # Squeekboard with globe-key cycling (en -> ja -> en) instead of the
+  # chooser popover. See packages/squeekboard/cycle-layout.patch.
+  squeekboard = prev.squeekboard.overrideAttrs (old: {
+    patches = (old.patches or []) ++ [ ../../packages/squeekboard/cycle-layout.patch ];
+  });
+
   xdg-desktop-portal = prev.xdg-desktop-portal.overrideAttrs (old: {
     doCheck = false;
   });

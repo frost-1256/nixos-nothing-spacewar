@@ -77,10 +77,22 @@
         "org/gnome/desktop/session" = {
           idle-delay = lib.gvariant.mkUint32 0;
         };
+        # Squeekboard globe key cycles these layouts (us -> jp -> us).
+        # fcitx5 IM follows: us -> keyboard-us, jp -> mozc.
+        "org/gnome/desktop/input-sources" = {
+          sources = [ (lib.gvariant.mkTuple [ "xkb" "us" ]) (lib.gvariant.mkTuple [ "xkb" "jp" ]) ];
+        };
       };
     }
   ];
 
+  # Japanese input via fcitx5 + mozc. Squeekboard sends keys; fcitx5 converts.
+  i18n.inputMethod = {
+    type = "fcitx5";
+    enable = true;
+    fcitx5.addons = with pkgs; [ fcitx5-mozc fcitx5-gtk ];
+    fcitx5.waylandFrontend = true;
+  };
   # Practical mobile packages (all stock nixpkgs, binary cache hits).
   programs.calls.enable = true;
   environment.systemPackages = with pkgs; [

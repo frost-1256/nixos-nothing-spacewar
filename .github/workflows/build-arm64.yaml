@@ -11,6 +11,15 @@ on:
           - gnome-mobile
           - minimal
           - phosh
+      components:
+        description: 'Which images to build'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - boot
+          - rootfs
 
 jobs:
   build:
@@ -49,10 +58,13 @@ jobs:
         id: target
         run: |
           TARGET="${{ github.event.inputs.target || 'gnome-mobile' }}"
+          COMPONENTS="${{ github.event.inputs.components || 'both' }}"
           echo "target=$TARGET" >> $GITHUB_OUTPUT
-          echo "Building target: $TARGET"
+          echo "components=$COMPONENTS" >> $GITHUB_OUTPUT
+          echo "Building $COMPONENTS for target: $TARGET"
 
       - name: Build boot image
+        if: steps.target.outputs.components == 'both' || steps.target.outputs.components == 'boot'
         run: |
           nix build \
             .#packages.aarch64-linux.boot-image-${{ steps.target.outputs.target }} \
@@ -62,7 +74,9 @@ jobs:
             2>&1 | tee build.log
 
       - name: Build rootfs image
+        if: steps.target.outputs.components == 'both' || steps.target.outputs.components == 'rootfs'
         run: |
+          if [ "${{ steps.target.outputs.components }}" = "rootfs" ]; then : > build.log; fi
           nix build \
             .#packages.aarch64-linux.rootfs-image-${{ steps.target.outputs.target }} \
             --no-link \
@@ -72,11 +86,16 @@ jobs:
       - name: Copy output images
         run: |
           mkdir -p output
-          cp -v $(nix path-info .#packages.aarch64-linux.boot-image-${{ steps.target.outputs.target }}) output/boot.img
-          cp -v $(nix path-info .#packages.aarch64-linux.rootfs-image-${{ steps.target.outputs.target }}) output/rootfs.img
+          if [ "${{ steps.target.outputs.components }}" = "both" ] || [ "${{ steps.target.outputs.components }}" = "boot" ]; then
+            cp -v $(nix path-info .#packages.aarch64-linux.boot-image-${{ steps.target.outputs.target }}) output/boot.img
+          fi
+          if [ "${{ steps.target.outputs.components }}" = "both" ] || [ "${{ steps.target.outputs.components }}" = "rootfs" ]; then
+            cp -v $(nix path-info .#packages.aarch64-linux.rootfs-image-${{ steps.target.outputs.target }}) output/rootfs.img
+          fi
           ls -lh output/
 
       - name: Upload boot.img
+        if: steps.target.outputs.components == 'both' || steps.target.outputs.components == 'boot'
         uses: actions/upload-artifact@v4
         with:
           name: nothing-spacewar-boot-${{ steps.target.outputs.target }}
@@ -84,11 +103,13 @@ jobs:
           retention-days: 30
 
       - name: Upload rootfs.img
+        if: steps.target.outputs.components == 'both' || steps.target.outputs.components == 'rootfs'
         uses: actions/upload-artifact@v4
         with:
           name: nothing-spacewar-rootfs-${{ steps.target.outputs.target }}
           path: output/rootfs.img
           retention-days: 30
+
 
       - name: Upload build log on failure
         if: failure()
