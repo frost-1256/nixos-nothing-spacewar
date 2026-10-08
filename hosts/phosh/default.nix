@@ -42,6 +42,42 @@
       dns = "192.168.1.1,8.8.8.8";
     };
   };
+  # Dual-SIM carrier profiles (slot1 LINEMO / slot2 povo).
+  networking.networkmanager.ensureProfiles.profiles."linemo" = {
+    connection = {
+      id = "linemo";
+      type = "gsm";
+      autoconnect = true;
+    };
+    gsm = {
+      apn = "plus.acs.jp.v6";
+      username = "lm";
+      password = "lm";
+    };
+    ipv4 = {
+      method = "auto";
+    };
+    ipv6 = {
+      method = "auto";
+      addr-gen-mode = "stable-privacy";
+    };
+  };
+  networking.networkmanager.ensureProfiles.profiles."povo" = {
+    connection = {
+      id = "povo";
+      type = "gsm";
+      autoconnect = false;
+    };
+    gsm = {
+      apn = "povo.jp";
+    };
+    ipv4 = {
+      method = "auto";
+    };
+    ipv6 = {
+      method = "auto";
+    };
+  };
 
   # Phosh on tty1 (auto-starts as admin, no display manager needed).
   services.xserver.desktopManager.phosh = {
