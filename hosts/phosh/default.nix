@@ -50,6 +50,17 @@
     group = "users";
   };
 
+  # squeekboard autostart is unreliable under phosh-session; force it via
+  # systemd user service bound to the graphical session.
+  systemd.user.services.squeekboard = {
+    description = "On-screen keyboard";
+    wantedBy = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.squeekboard}/bin/squeekboard";
+      Restart = "on-failure";
+    };
+  };
   # SSH fallback (no keyboard on device yet).
   services.openssh.enable = true;
 

@@ -52,6 +52,9 @@
   #   TX capture, VA DMIC, and RX (headphone) paths.
   # - CONFIG_SOUNDWIRE_QCOM: Qualcomm SoundWire controller.
 
+  # Modem QMI over MHI (ModemManager qcom-soc plugin needs /dev/qrtr0):
+  # - CONFIG_MHI_BUS: MHI bus core.
+  # - CONFIG_QRTR_MHI: QRTR over MHI transport (absent from base config).
   configfile = stdenv.mkDerivation {
     name = "kernel-config";
     src = "${pmaportsSrc}/device/testing/linux-postmarketos-qcom-sc7280/config-postmarketos-qcom-sc7280.aarch64";
@@ -74,8 +77,11 @@
         -e 's/# CONFIG_SND_SOC_LPASS_TX_MACRO is not set/CONFIG_SND_SOC_LPASS_TX_MACRO=m/' \
         -e 's/# CONFIG_SND_SOC_LPASS_VA_MACRO is not set/CONFIG_SND_SOC_LPASS_VA_MACRO=m/' \
         -e 's/# CONFIG_SND_SOC_LPASS_RX_MACRO is not set/CONFIG_SND_SOC_LPASS_RX_MACRO=m/' \
-        -e 's/# CONFIG_SOUNDWIRE_QCOM is not set/CONFIG_SOUNDWIRE_QCOM=m/' \
+        -e 's/# CONFIG_MHI_BUS is not set/CONFIG_MHI_BUS=m/' \
         $src > config
+      # CONFIG_QRTR_MHI has no line at all in the base config: append it.
+      # Provides /dev/qrtr0 (MHI transport) for ModemManager's qcom-soc plugin.
+      echo 'CONFIG_QRTR_MHI=m' >> config
     '';
 
     installPhase = ''
