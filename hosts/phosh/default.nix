@@ -70,9 +70,18 @@
     }
   ];
 
-  # Terminal for on-device debugging.
+  # Practical mobile packages (all stock nixpkgs, binary cache hits).
+  programs.calls.enable = true;
   environment.systemPackages = with pkgs; [
-    gnome-console
+    gnome-console # Terminal.
+    firefox-bin # Browser (prebuilt, no source build).
+    chatty # SMS/MMS.
+    gnome-contacts
+    gnome-clocks
+    gnome-calculator
+    papers # Document viewer.
+    loupe # Image viewer.
+    wl-clipboard
   ];
 
   # Create admin user (password set via `mkpasswd`, change with `passwd`).
